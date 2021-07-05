@@ -1,0 +1,252 @@
+
+
+<!DOCTYPE html>
+<html lang = "ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>ですます変換である</title>
+</head>
+<body　onselectstart="return false;">
+
+<script>
+  document.oncontextmenu = function() { return false; }
+  /*
+音便どうにかしたい
+インデントぉ
+レイアウト
+空欄で登録すると翻訳時に無限ループ
+
+*/
+
+  //var lock = 1;
+
+  var backing = 0;
+  var output_clicked = 0;
+  var buf = "";
+   var start_pos = 0;
+      var end_pos = 0;
+
+  var dictionary = [
+      { before : "します。", after : "する。", skip: 3 },
+      { before : "ました。", after : "た。", skip: 3 }
+  ];
+  
+  
+
+function swap(index){
+	// 選択肢を提示？
+}
+
+function highlight(line, index){
+	return ("<span id=\"span"+index+"\" oncontextmenu=\"swap("+index+")\"><font color=\"red\">"+line+"</font></span>");
+}
+
+  function raw_sentence(line){
+      var r = "";
+      let counter = 0;
+      for (i = 0; i < line.length; i++){
+	  let w = line.slice(i, i+1);
+	  if (w == "<" && counter == 0){
+	      counter = 2;
+	  }else if (counter > 0 && w == ">"){
+	      counter--;
+	  }else if (counter == 0) {
+	      r+=w;
+	  }
+      }
+      return r;
+  }
+
+function convert(source){
+    //var source = document.getElementById("source").value;
+    var output = "";
+    var index = 0;
+
+    //lock = 1;
+
+    for(i=0; i<source.length; i++){
+	var rest = source.slice(i, source.length);
+	//console.log(rest);
+	var hit = 0;
+	for(j=0; j<dictionary.length; j++){
+	    if (rest.startsWith(dictionary[j].before)){
+		　output+=highlight(dictionary[j].after, index);
+		index++;
+		i=i+dictionary[j].skip;
+		hit = 1;
+		break;
+	    }
+	}
+	if (hit == 0){
+	    output+=source.slice(i, i+1);
+	}
+    }
+
+    document.getElementById('output').innerHTML = output;
+}
+
+  function reconvert(){
+      let dirt = document.getElementById('output').innerHTML;
+      let source = raw_sentence(dirt);
+      /*let counter = 0;
+      for (i = 0; i < raw.length; i++){
+	  let w = raw.slice(i, i+1);
+	  if (w == "<" && counter == 0){
+	      counter = 2;
+	  }else if (counter > 0 && w == ">"){
+	      counter--;
+	  }else if (counter == 0) {
+	      source+=w;
+	  }
+      }*/
+      //console.log(source);
+      convert(source);
+  }
+
+  function AddDict(before, after){
+      //console.log(new_before.value);
+      //console.log(new_after.value);
+      //console.log(new_before.value.length);
+      //dictionary.push({before: new_before.value, after: new_after.value, skip: new_before.value.length - 1});
+      if (before != ""){
+	  dictionary.push({before: before, after: after, skip: before.length - 1});
+	  console.log(dictionary);
+	  RowColChange(before, after);
+      }
+  }
+
+  function RowColChange(before, after) {
+      let table  = document.getElementById('tableArea');
+      let newRow = table.insertRow();
+      
+      let newCell = newRow.insertCell();
+      newCell.innerHTML = before;
+
+      newCell = newRow.insertCell();
+      newText = document.createTextNode("→");
+      newCell.appendChild(newText);
+      
+      newCell = newRow.insertCell();
+      newCell.innerHTML = after;
+
+      newCell = newRow.insertCell();
+      newCell.innerHTML = '<input type="button" value="削除" id="coladd" onclick="coldel(this)">';
+  }
+
+  function coldel(obj) {
+      // 削除ボタンを押下された行を取得
+      tr = obj.parentNode.parentNode;
+      console.log("deleted index:" + tr.rowIndex);
+      //delete dictionary[tr.rowIndex - 1];
+      dictionary.splice(tr.rowIndex - 2, 1 );
+      // trのインデックスを取得して行を削除する
+      tr.parentNode.deleteRow(tr.sectionRowIndex);
+      console.log(dictionary);
+  }
+
+  
+  document.onselectionchange = function () {
+      var value = getSelection();
+      //let output = document.getElementById('output');
+      let ranges = [];
+      for(let i = 0; i < value.rangeCount; i++) {
+	  ranges[i] = value.getRangeAt(i);
+      }
+      //var t = value.getRangeAt(0);
+      //console.log(Math.abs(value.baseOffset - value.focusOffset));
+      if (value.type == "Range" && Math.abs(value.baseOffset - value.focusOffset) < 10 && output_clicked == 1){
+	  console.log(value) ;
+	  document.getElementById('debug').innerHTML = ranges;
+	  strings_ranges =  document.getElementById('debug').innerHTML;
+	  pre_before.value = strings_ranges;
+      }
+      if (value.type == "Range" && output_clicked == 1){
+	  start_pos = Math.min(value.baseOffset, value.focusOffset);
+      }
+  }
+  
+  window.addEventListener("mousedown", function (event) {
+      // x座標
+      var x = event.pageX;
+      // y座標
+      var y = event.pageY;
+      //console.log("x座標 : " + x);
+      //console.log( "y座標 : " + y);
+      if(x < 820 && y > 180){
+	  output_clicked = 1;
+      }else{
+	  output_clicked = 0;
+      }
+      console.log("is_in_output?",output_clicked);
+  });
+  
+
+  document.addEventListener('keyup', (event) => {
+      var keyName = event.key;
+      if (output_clicked == 1){
+	  if (keyName == "Backspace"){
+	      backing = 1;
+	      start_pos = getSelection().baseOffset;
+	      //console.log("start", start_pos);
+	  }else{
+	      let passage = getSelection().anchorNode.data;
+	      //console.log(passage);
+	      end_pos = getSelection().baseOffset;
+	      console.log("start, end", start_pos, end_pos);
+	      //let raw = document.getElementById('output').innerHTML;
+	      pre_after.value = passage.slice(start_pos, end_pos);
+	  }
+      }
+  });
+  
+  var observer = new MutationObserver(function(){
+  /** DOMの変化が起こった時の処理 */
+  console.log('DOMが変化しました');
+  });
+
+  </script>
+
+
+<form><textarea id="source" rows="10" cols="100">原文</textarea><br></form>
+<button onclick="convert(document.getElementById('source').value)">変換</button>
+
+<table style="border:none;"><tr><td  style="border:none;" valign="top">
+<div id="output" contentEditable="true" style = "border: solid 3px #000;width:800px;" >変換後の文章</div>
+<button onclick="reconvert()">再変換</button>
+
+</td><td  style="border:none;" valign="top">
+<style>
+  table, tr, td {
+   border: solid 1px black;
+  }
+</style>
+<table id="tableArea" onselectstart="return false;">
+  <tr><th  onselectstart="return false;">変換リスト</th></tr>
+  <tr><td><input
+    type="strings" 
+    id = "pre_before"
+	    value="しましょう。"  
+    /></td><td>→</td><td><input
+    type="strings" 
+    id = "pre_after"
+    value="しよう。"
+			   /></td><td>
+      <input type="button" value="登録" id="button_register" onclick="AddDict(pre_before.value, pre_after.value)"></td>
+    </td>
+<tr><td onselectstart="return false;">します。</td>
+  <td  onselectstart="return false;">→</td>
+  <td  onselectstart="return false;">する。</td>
+    <td  onselectstart="return false;"><input type="button" value="削除" id="coladd" onclick="coldel(this)"></td></tr>
+  <tr><td>ました。</td><td>→</td><td>た。</td>
+    <td><input type="button" value="削除" id="coladd" onclick="coldel(this)"></td></tr>
+</table>
+</td></tr>
+</table>
+
+<font color="white"><div id="debug" onselectstart="return false;">debug</div></font>
+<font color="white"><div id="debug2" onselectstart="return false;">debug2</div></font>
+<div id = "target"></div>
+
+</body>
+</html>
+
