@@ -124,8 +124,8 @@ function convert(source){
 	  ranges[i] = value.getRangeAt(i);
       }
       //var t = value.getRangeAt(0);
-      console.log(value);
-      if (value.type == "Range"){
+      //console.log(Math.abs(value.baseOffset - value.focusOffset));
+      if (value.type == "Range" && Math.abs(value.baseOffset - value.focusOffset) < 10){
 	  console.log(value) ;
 	  document.getElementById('debug').innerHTML = ranges;
 	  strings_ranges =  document.getElementById('debug').innerHTML;
@@ -169,16 +169,18 @@ alert("選択した文字列: " + selObj);*/
 
 <form><textarea id="source" rows="10" cols="100">原文</textarea><br></form>
 <button onclick="convert(document.getElementById('source').value)">変換</button>
-<div id="output" contentEditable="true" style = "border: solid 3px #000;width:800px;">変換後の文章</div>
+
+<table style="border:none;"><tr><td  style="border:none;" valign="top">
+<div id="output" contentEditable="true" style = "border: solid 3px #000;width:800px;" >変換後の文章</div>
 <button onclick="reconvert()">再変換</button>
 
+</td><td  style="border:none;" valign="top">
 <style>
   table, tr, td {
    border: solid 1px black;
   }
 </style>
-
-<table id="tableArea" onselectstart="return false;" align="right">
+<table id="tableArea" onselectstart="return false;">
   <tr><th  onselectstart="return false;">変換リスト</th></tr>
   <tr><td><input
     type="strings" 
@@ -198,7 +200,8 @@ alert("選択した文字列: " + selObj);*/
   <tr><td>ました。</td><td>→</td><td>た。</td>
     <td><input type="button" value="削除" id="coladd" onclick="coldel(this)"></td></tr>
 </table>
-
+</td></tr>
+</table>
 
 <font color="white"><div id="debug" onselectstart="return false;">debug</div></font>
 <font color="white"><div id="debug2" onselectstart="return false;">debug2</div></font>
