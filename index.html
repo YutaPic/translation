@@ -26,8 +26,8 @@
       var end_pos = 0;
 
   var dictionary = [
-      { before : "します。", after : "する。", skip: 3 },
-      { before : "ました。", after : "た。", skip: 3 }
+      { before : "します", after : "する", skip:2 },
+      { before : "ました", after : "た", skip: 2 }
   ];
   
   
@@ -83,6 +83,10 @@ function convert(source){
     }
 
     document.getElementById('output').innerHTML = output;
+
+    if (filter.value == "全文を表示"){
+	filter.value = "文末だけ表示";
+    }
 }
 
   function reconvert(){
@@ -141,7 +145,7 @@ function convert(source){
 	  let dirt = document.getElementById('output').innerHTML;
 	  //document.getElementById('debug2').innerHTML = dirt;
 	  let source = raw_sentence(dirt);
-	  document.getElementById('output').innerHTML = hide("。", source);
+	  document.getElementById('output').innerHTML = hide("。", dirt);
 	  //console.log(source);
 	  lol.value = "全文を表示";
       } else{
@@ -154,17 +158,49 @@ function convert(source){
   function hide(keyword, source){
       let output = "";
       let find = 0;
+      let in_tag2 = 0;
+      console.log("len", source.length);
       for(i=0; i < source.length; i++){
+	  //let rest = source.slice(i, source.length);
 	  //console.log(i,"loop!");
 	  let word = source.slice(i, i+1);
 	  let pre_word;
-	  if (i + 7 < source.length){
-	      pre_word = source.slice(i+7, i+8);
-	  }else{
+	  let colored = 0;
+	  let in_tag = 0;
+	  if (i + 7 >= source.length){
 	      pre_word = source.slice(source.length-1, source.length);
+	  }else{
+	      let j = 0;
+	      let count = 0;
+	      while (count < 7){
+		  if ((source.slice(i+j, i+j+1) == keyword)){
+		      break;
+		  }
+		  else if ((source.slice(i+j, i+j+1) == "<" && in_tag == 0)){
+		      console.log("< check");
+		      in_tag = 1;
+		      j++;
+		  }else if (source.slice(i+j, i+j+1) == ">" && in_tag== 1){
+		      console.log("> check");
+		      in_tag = 0;
+		      j++;
+		  }else if (in_tag == 1){
+		      j++;
+		  }else{
+		      if (i+j >= source.length){
+			  find = 1;
+			  break;
+		      }
+		      j++;
+		      count++;
+		  }
+		 //console.log("count, j", count, j);
+	      }
+	      pre_word = source.slice(i+j, i+j+1);
+	      console.log(i, pre_word, word, find);
 	  }
 	  
-	  if (pre_word == keyword){
+	  if (pre_word == keyword && word != keyword){
 	      output += word;
 	      find = 1;
 	  } else if (word == keyword){
@@ -172,7 +208,11 @@ function convert(source){
 	      find = 0;
 	  } else if (find == 1){
 	      output += word;
-	  } else {
+	  } else if (in_tag2 == 0 && word == "<") {
+	      in_tag2 = 1;
+	  } else if (in_tag2 == 1 && word == ">"){
+	      in_tag2 = 0;
+	  } else if (in_tag2 == 0) {
 	      output += "<font color=\"white\">"+word+"</font>";
 	  }
       }
@@ -280,9 +320,8 @@ function convert(source){
 </table>
 
 <font color="white"><div id="debug" onselectstart="return false;">debug</div></font>
-<font color="white"><div id="debug2" onselectstart="return false;">debug2</div></font>
+<font color="black"><div id="debug2" onselectstart="return false;"><font color="red">h<font color="black">o</font>gehoge</font></div></font>
 <div id = "target"></div>
 
 </body>
 </html>
-
