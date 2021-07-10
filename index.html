@@ -104,10 +104,12 @@ function convert(source){
       //console.log(new_after.value);
       //console.log(new_before.value.length);
       //dictionary.push({before: new_before.value, after: new_after.value, skip: new_before.value.length - 1});
-      if (before != ""){
+      if (before.length > 1){
 	  dictionary.push({before: before, after: after, skip: before.length - 1});
 	  console.log(dictionary);
 	  RowColChange(before, after);
+      } else if (before.length  == 1){
+	  alert("1文字だけは変換できません。");
       }
   }
 
@@ -249,7 +251,7 @@ function convert(source){
       var y = event.pageY;
       //console.log("x座標 : " + x);
       //console.log( "y座標 : " + y);
-      if(x < 820 && y > 180){
+      if(x < 820 && y > 290){
 	  output_clicked = 1;
       }else{
 	  output_clicked = 0;
@@ -283,14 +285,18 @@ function convert(source){
 <button onclick="convert(document.getElementById('source').value)">変換</button>
 
 <table style="border:none;"><tr><td  style="border:none;" valign="top">
-     <font size=-2 >↓直接編集できます。修正したい箇所を選択して書き直してください。</font>
+      <font size=-2 >↓直接編集できます。修正したい箇所を<font color="mediumvioletred">なぞって</font>選択して書き直してください。</font>
+      <table style="border:none;">
+	<input id= "filter" type= "button" value= "文末だけ表示" onClick="excerpt(this);">
+	<button onclick="reconvert()">再変換</button>
+	</table>
 <div id="output" contentEditable="true" style = "border: solid 3px #000;width:800px;" >変換後の文章</div>
-<button onclick="reconvert()">再変換</button>
+<!--<button onclick="reconvert()">再変換</button>-->
 <!--<button onclick="excerpt()">文末を抜粋</button>-->
-<input id= "filter" type= "button" value= "文末だけ表示" onClick="excerpt(this);">
+<!--<input id= "filter" type= "button" value= "文末だけ表示" onClick="excerpt(this);">-->
 
     </td><td  style="border:none;" valign="top">
-       <font size=-2 >↓式を登録・削除すると、次回以降の変換で適用されます。</font>
+       <font size=-2 >↓必要な変換はどんどん登録しましょう。次の変換から使えます。</font>
 <style>
   table, tr, td {
    border: solid 1px black;
@@ -298,7 +304,7 @@ function convert(source){
 </style>
 <table id="tableArea" onselectstart="return false;">
   <tr><th  onselectstart="return false;">変換式リスト</th></tr>
-  <tr><td><input
+  <tr bgcolor="powderblue"><td><input
     type="strings" 
     id = "pre_before"
 	    value="しましょう"  
