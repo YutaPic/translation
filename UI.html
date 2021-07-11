@@ -1,0 +1,376 @@
+
+
+<!DOCTYPE html>
+<html lang = "ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>ですます変換である</title>
+</head>
+<body　onselectstart="return false;">
+
+<script>
+  document.oncontextmenu = function() { return false; }
+  /*
+音便どうにかしたい
+レイアウト
+文末をすぐ観れるといいよね
+*/
+
+  //var lock = 1;
+
+  var backing = 0;
+  var output_clicked = 0;
+  var buf = "";
+   var start_pos = 0;
+      var end_pos = 0;
+
+  var dictionary = [
+      { before : "します", after : "する", skip:2 },
+      { before : "ました", after : "た", skip: 2 }
+  ];
+  
+  
+
+function swap(index){
+	// 選択肢を提示？
+}
+
+function highlight(line, index){
+    return ("<font color=\"red\">"+line+"</font>");
+}
+
+  function raw_sentence(line, first_c){
+      var r = "";
+      let counter = 0;
+      //console.log(line);
+      for (let i = 0; i < line.length; i++){
+	  let w = line.slice(i, i+1);
+	  if (w == "<" && counter == 0 && line.slice(i+13, i+14)==first_c){
+	      counter = 3;
+	  }else if (((counter == 3 || counter == 1) && w == ">") || (counter == 2 && w == "<")){
+	      counter--;
+	  }else if (counter == 0 || counter == 2) {
+	      r+=w;
+	  }
+      }
+      return r;
+  }
+
+  function raw_sentence_all(line){
+      var r = "";
+      let counter = 0;
+      for (let i = 0; i < line.length; i++){
+	  let w = line.slice(i, i+1);
+	  if (w == "<" && counter == 0){
+	      counter = 1;
+	  }else if ((counter == 1) && w == ">"){
+	      counter--;
+	  }else if (counter == 0) {
+	      r+=w;
+	  }
+      }
+      return r;
+  }
+
+function convert(source){
+    //var source = document.getElementById("source").value;
+    var output = "";
+    var index = 0;
+    var real_length = raw_sentence(source, "r").length;
+    //console.log(source);
+    //lock = 1;
+
+    for(let i=0; i<source.length; i++){
+	//console.log("i, slice:",i, source.slice(i, source.length));
+	var rest = source.slice(i, source.length);
+	var hit = 0;
+	let skip = 0;
+	let not_found = 0;
+	let count = 0;
+	for(let j=0; j<dictionary.length; j++){
+	    not_found = 0;
+	    skip = 0;
+	    for (let h = 0; h < dictionary[j].before.length; h++){
+		count = 0;
+		if (rest[skip] == "<"){
+		    while (rest[skip] != ">"){
+			if (rest[skip] == "<" && rest[skip + 6] == ">"){
+			    count --;
+			} else if (rest[skip] == "<"){
+			    count++;
+			}
+			skip++;
+		    }
+		    skip++;
+		}
+		//console.log(rest[skip], skip, count);
+		if ((dictionary[j].before)[h] != rest[skip]){
+		    not_found = 1;
+		    break;
+		} else {
+		    skip++;
+		}
+	    }
+	    if (not_found == 0){
+		if (count == 0){
+		    output += highlight(dictionary[j].after, index);
+		} else if (count < 0){
+		    output += "</font>" + highlight(dictionary[j].after, index);
+		} else{
+		    output += highlight(dictionary[j].after, index) + "<font color=\"red\">";
+		    }
+		i += skip - 1;
+		break;
+	    }
+	}
+	//console.log(hit, source, i);
+	if (not_found == 1){
+	    output+=source.slice(i, i+1);
+	}
+    }
+
+    document.getElementById('output').innerHTML = output;
+
+    if (filter.value == "全文を表示"){
+	filter.value = "文末だけ表示";
+    }
+}
+
+  function reconvert(){
+      if (filter.value == "全文を表示"){
+	  filter.value = "文末だけ表示";
+	  document.getElementById('output').innerHTML = raw_sentence(document.getElementById('output').innerHTML, "w");
+      }
+      let dirt = document.getElementById('output').innerHTML;
+      convert(dirt);
+  }
+
+  function AddDict(before, after){
+      if (before.length > 1 && before.length < 10){
+	  dictionary.push({before: before, after: after, skip: before.length - 1});
+	  console.log(dictionary);
+	  RowColChange(before, after);
+      } else if (before.length  == 1){
+	  alert("1文字だけは変換できません。");
+      } else if (before.length > 9){
+	  alert("文字数が大きすぎます。");
+      }
+  }
+
+  function RowColChange(before, after) {
+      let table  = document.getElementById('tableArea');
+      let newRow = table.insertRow();
+      
+      let newCell = newRow.insertCell();
+      newCell.innerHTML = before;
+
+      newCell = newRow.insertCell();
+      newText = document.createTextNode("→");
+      newCell.appendChild(newText);
+      
+      newCell = newRow.insertCell();
+      newCell.innerHTML = after;
+
+      newCell = newRow.insertCell();
+      newCell.innerHTML = '<input type="button" value="削除" id="coladd" onclick="coldel(this)">';
+  }
+
+  function coldel(obj) {
+      // 削除ボタンを押下された行を取得
+      tr = obj.parentNode.parentNode;
+      console.log("deleted index:" + tr.rowIndex);
+      //delete dictionary[tr.rowIndex - 1];
+      dictionary.splice(tr.rowIndex - 2, 1 );
+      // trのインデックスを取得して行を削除する
+      tr.parentNode.deleteRow(tr.sectionRowIndex);
+      console.log(dictionary);
+  }
+
+  function excerpt(lol){
+      if (lol.value == "文末だけ表示"){
+	  let dirt = document.getElementById('output').innerHTML;
+	  document.getElementById('output').innerHTML = hide("。", dirt);
+	  //console.log(source);
+	  lol.value = "全文を表示";
+      } else{
+	  document.getElementById('output').innerHTML = raw_sentence(document.getElementById('output').innerHTML, "w");
+	  lol.value = "文末だけ表示";
+      }
+  }
+
+  function hide(keyword, source){
+      let output = "";
+      let find = 0;
+      let in_tag2 = 0;
+      //console.log("len", source.length);
+      for(i=0; i < source.length; i++){
+	  let word = source.slice(i, i+1);
+	  let pre_word;
+	  //let colored = 0;
+	  let in_tag = 0;
+	  if (i + 7 >= source.length){
+	      pre_word = source.slice(source.length-1, source.length);
+	  }else{
+	      let j = 0;
+	      let count = 0;
+	      while (count < 7){
+		  if ((source.slice(i+j, i+j+1) == keyword)){
+		      break;
+		  }
+		  else if ((source.slice(i+j, i+j+1) == "<" && in_tag == 0)){
+		      in_tag = 1;
+		      j++;
+		  }else if (source.slice(i+j, i+j+1) == ">" && in_tag== 1){
+		      in_tag = 0;
+		      j++;
+		  }else if (in_tag == 1){
+		      j++;
+		  }else{
+		      if (i+j >= source.length){
+			  find = 1;
+			  break;
+		      }
+		      j++;
+		      count++;
+		  }
+		 //console.log("count, j", count, j);
+	      }
+	      pre_word = source.slice(i+j, i+j+1);
+	      //console.log(i, pre_word, word, find);
+	  }
+	  
+	  if (pre_word == keyword && word != keyword){
+	      output += word;
+	      find = 1;
+	  } else if (word == keyword){
+	      output += word;
+	      find = 0;
+	  } else if (find == 1){
+	      output += word;
+	  } else if (in_tag2 == 0 && word == "<") {
+	      in_tag2 = 1;
+	      output += word;
+	  } else if (in_tag2 == 1 && word == ">"){
+	      in_tag2 = 0;
+	      output += word;
+	  }else if (in_tag2 == 1) {
+	      output += word;
+	  }else if (in_tag2 == 0) {
+	      output += "<font color=\"white\">"+word+"</font>";
+	  }
+      }
+      //console.log(output);
+      return output;
+  }
+  
+
+  
+  document.onselectionchange = function () {
+      var value = getSelection();
+      //let output = document.getElementById('output');
+      let ranges = [];
+      for(let i = 0; i < value.rangeCount; i++) {
+	  ranges[i] = value.getRangeAt(i);
+      }
+      //var t = value.getRangeAt(0);
+      //console.log(Math.abs(value.baseOffset - value.focusOffset), ranges);
+      if (value.type == "Range" && output_clicked == 1){
+	  //console.log(ranges);
+	  //console.log(value) ;
+	  document.getElementById('debug').innerHTML = ranges;
+	  strings_ranges = document.getElementById('debug').innerHTML;
+	  if (strings_ranges.length < 10){
+	      pre_before.value = strings_ranges;
+	  }
+      }
+      if (value.type == "Range" && output_clicked == 1){
+	  start_pos = Math.min(value.baseOffset, value.focusOffset);
+      }
+  }
+  
+  window.addEventListener("mousedown", function (event) {
+      // x座標
+      var x = event.pageX;
+      // y座標
+      var y = event.pageY;
+      //console.log("x座標 : " + x);
+      //console.log( "y座標 : " + y);
+      if(x < 820 && y > 290){
+	  output_clicked = 1;
+      }else{
+	  output_clicked = 0;
+      }
+      console.log("is_in_output?",output_clicked);
+  });
+  
+
+  document.addEventListener('keyup', (event) => {
+      var keyName = event.key;
+      if (output_clicked == 1){
+	  if (keyName == "Backspace"){
+	      backing = 1;
+	      start_pos = getSelection().baseOffset;
+	      //console.log("start", start_pos);
+	  }else{
+	      let passage = getSelection().anchorNode.data;
+	      //console.log(passage);
+	      end_pos = getSelection().baseOffset;
+	      console.log("start, end", start_pos, end_pos);
+	      //let raw = document.getElementById('output').innerHTML;
+	      pre_after.value = passage.slice(start_pos, end_pos);
+	  }
+      }
+  });
+
+  </script>
+
+<h1>ですます変換である</h1>
+<form><textarea id="source" rows="10" cols="100">原文</textarea><br></form>
+<button onclick="convert(document.getElementById('source').value)">原文を変換</button>
+
+<table style="border:none;"><tr><td  style="border:none;" valign="top">
+      <font size=-2 >↓直接編集できます。修正したい箇所を<font color="mediumvioletred">なぞって</font>選択して書き直してください。</font>
+      <table style="border:none;">
+	<input id= "filter" type= "button" value= "文末だけ表示" onClick="excerpt(this);">
+	<button onclick="reconvert()">再変換</button>
+	</table>
+<div id="output" contentEditable="true" style = "border: solid 3px #000;width:800px;" >変換後の文章</div>
+<!--<button onclick="reconvert()">再変換</button>-->
+<!--<button onclick="excerpt()">文末を抜粋</button>-->
+<!--<input id= "filter" type= "button" value= "文末だけ表示" onClick="excerpt(this);">-->
+
+    </td><td  style="border:none;" valign="top">
+       <font size=-2 >↓必要な変換はどんどん登録しましょう。次の変換から使えます。</font>
+<style>
+  table, tr, td {
+   border: solid 1px black;
+  }
+</style>
+<table id="tableArea" onselectstart="return false;" width="200" height="100">
+  <tr><th  onselectstart="return false;">変換式リスト</th></tr>
+  <tr bgcolor="powderblue"><td><input
+    type="strings" 
+    id = "pre_before"
+	    value="しましょう"  
+    /></td><td>→</td><td><input
+    type="strings" 
+    id = "pre_after"
+    value="しよう"
+			   /></td><td>
+      <input type="button" value="登録" id="button_register" onclick="AddDict(pre_before.value, pre_after.value)"></td>
+    </td>
+<tr><td onselectstart="return false;">します</td>
+  <td  onselectstart="return false;">→</td>
+  <td  onselectstart="return false;">する</td>
+    <td  onselectstart="return false;"><input type="button" value="削除" id="coladd" onclick="coldel(this)"></td></tr>
+  <tr><td>ました</td><td>→</td><td>た</td>
+    <td><input type="button" value="削除" id="coladd" onclick="coldel(this)"></td></tr>
+</table>
+</td></tr>
+</table>
+
+<font color="white"><div id="debug" onselectstart="return false;">debug</div></font>
+<div id = "target"></div>
+
+</body>
+</html>
